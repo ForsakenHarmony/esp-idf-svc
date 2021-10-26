@@ -42,13 +42,13 @@ pub mod httpd; // TODO: Retire
 #[cfg(feature = "alloc")]
 // TODO: Ideally should not need "alloc" (also for performance reasons)
 pub mod log;
+pub mod misc;
 #[cfg(all(
     feature = "alloc",
     esp_idf_comp_mqtt_enabled,
     esp_idf_comp_esp_event_enabled
 ))]
 pub mod mqtt;
-pub mod misc;
 #[cfg(esp_idf_config_lwip_ipv4_napt)]
 pub mod napt;
 #[cfg(all(feature = "alloc", esp_idf_comp_esp_netif_enabled))]
