@@ -1,4 +1,5 @@
 use core::cmp::min;
+use core::time::Duration;
 
 use ::log::*;
 
@@ -6,7 +7,7 @@ use esp_idf_hal::mutex;
 
 use esp_idf_sys::*;
 
-use crate::private::cstr::CString;
+use crate::private::{cstr::CString, wait::Waiter};
 
 const SNTP_SERVER_NUM: usize = SNTP_MAX_SERVERS as usize;
 
@@ -115,6 +116,7 @@ impl<'a> Default for SntpConf<'a> {
 }
 
 static TAKEN: mutex::Mutex<bool> = mutex::Mutex::new(false);
+static mut WAITER: Option<Waiter> = None;
 
 pub struct EspSntp {
     // Needs to be kept around because the C bindings only have a pointer.
@@ -152,20 +154,32 @@ impl EspSntp {
             c_servers[i] = c_server;
         }
 
+        let sntp = EspSntp {
+            _sntp_servers: c_servers,
+        };
+
         unsafe {
             sntp_set_time_sync_notification_cb(Some(Self::sync_cb));
             sntp_init();
         };
 
+        let waiter = WAITER.insert(Waiter::new());
+        waiter.start();
+
         info!("Initialization complete");
 
-        Ok(Self {
-            _sntp_servers: c_servers,
-        })
+        Ok(sntp)
     }
 
     pub fn get_sync_status(&self) -> SyncStatus {
         SyncStatus::from(unsafe { sntp_get_sync_status() })
+    }
+
+    /// Wait for SNTP to be synced or the duration passed, returns true if it synced, false for a timeout.
+    pub fn wait_for_sync(&self, dur: Duration) -> bool {
+        info!("Waiting for system time to be set");
+
+        unsafe { WAITER.as_ref().unwrap().wait_timeout(dur) }
     }
 
     unsafe extern "C" fn sync_cb(tv: *mut esp_idf_sys::timeval) {
@@ -174,6 +188,8 @@ impl EspSntp {
             (*tv).tv_sec,
             (*tv).tv_usec,
         );
+
+        WAITER.as_ref().unwrap().notify();
     }
 }
 
