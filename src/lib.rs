@@ -67,6 +67,8 @@ pub mod nvs_storage;
 pub mod ota;
 #[cfg(esp_idf_comp_esp_netif_enabled)]
 pub mod ping;
+#[cfg(feature = "alloc")]
+pub mod reset;
 #[cfg(esp_idf_comp_esp_netif_enabled)]
 pub mod sntp;
 #[cfg(esp_idf_comp_esp_event_enabled)]
