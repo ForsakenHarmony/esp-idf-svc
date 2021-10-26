@@ -4,10 +4,12 @@
 #![feature(generic_associated_types)] // For mutex, http, http::client, http::server, ota
 #![cfg_attr(version("1.61"), allow(deprecated_where_clause_location))]
 
-#[cfg(any(feature = "alloc"))]
+#[cfg(feature = "alloc")]
 #[macro_use]
 extern crate alloc;
 
+#[cfg(feature = "alloc")]
+pub mod dns;
 pub mod errors;
 #[cfg(all(
     feature = "alloc",
@@ -42,6 +44,7 @@ pub mod httpd; // TODO: Retire
 #[cfg(feature = "alloc")]
 // TODO: Ideally should not need "alloc" (also for performance reasons)
 pub mod log;
+pub mod lwip;
 pub mod misc;
 #[cfg(all(
     feature = "alloc",
