@@ -72,6 +72,8 @@ pub mod sntp;
 #[cfg(esp_idf_comp_esp_event_enabled)]
 pub mod sysloop;
 pub mod systime;
+#[cfg(feature = "alloc")]
+pub mod task;
 pub mod time;
 #[cfg(all(feature = "alloc", esp_idf_comp_esp_timer_enabled))]
 pub mod timer;
