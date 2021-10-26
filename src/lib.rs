@@ -48,6 +48,7 @@ pub mod log;
     esp_idf_comp_esp_event_enabled
 ))]
 pub mod mqtt;
+pub mod misc;
 #[cfg(esp_idf_config_lwip_ipv4_napt)]
 pub mod napt;
 #[cfg(all(feature = "alloc", esp_idf_comp_esp_netif_enabled))]
@@ -71,6 +72,7 @@ pub mod sntp;
 #[cfg(esp_idf_comp_esp_event_enabled)]
 pub mod sysloop;
 pub mod systime;
+pub mod time;
 #[cfg(all(feature = "alloc", esp_idf_comp_esp_timer_enabled))]
 pub mod timer;
 #[cfg(all(
