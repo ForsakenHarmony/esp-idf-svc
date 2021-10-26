@@ -236,6 +236,25 @@ pub struct EspWifi {
     _ip_subscription: EspSubscription<System>,
 }
 
+pub enum PowerSaveMode {
+    /// No power save
+    None,
+    /// Minimum modem power saving. In this mode, station wakes up to receive beacon every DTIM period
+    MinModem,
+    ///Maximum modem power saving. In this mode, interval to receive beacons is determined by the listen_interval parameter in wifi_sta_config_t
+    MaxModem,
+}
+
+impl Into<wifi_ps_type_t> for PowerSaveMode {
+    fn into(self) -> wifi_ps_type_t {
+        match self {
+            PowerSaveMode::None => wifi_ps_type_t_WIFI_PS_NONE,
+            PowerSaveMode::MinModem => wifi_ps_type_t_WIFI_PS_MIN_MODEM,
+            PowerSaveMode::MaxModem => wifi_ps_type_t_WIFI_PS_MAX_MODEM,
+        }
+    }
+}
+
 impl EspWifi {
     pub fn new(
         netif_stack: Arc<EspNetifStack>,
@@ -333,6 +352,10 @@ impl EspWifi {
         info!("Initialization complete");
 
         Ok(wifi)
+    }
+
+    pub fn set_power_save_mode(&mut self, mode: PowerSaveMode) -> Result<(), EspError> {
+        esp!(unsafe { esp_wifi_set_ps(mode.into()) })
     }
 
     pub fn with_client_netif<F, T>(&self, f: F) -> T
@@ -789,6 +812,7 @@ impl Drop for EspWifi {
         {
             let mut taken = TAKEN.lock();
 
+            // TOOD: check if this still errors
             self.clear_all().unwrap();
             *taken = false;
         }
