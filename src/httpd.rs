@@ -2,18 +2,12 @@ use core::{marker::PhantomData, ptr};
 
 extern crate alloc;
 use alloc::vec;
-
 use std::io;
 
 use ::anyhow::anyhow;
-
-use log::{info, log, Level};
-
 use embedded_svc::httpd::*;
-
-use esp_idf_sys::c_types::*;
-use esp_idf_sys::esp;
-use esp_idf_sys::*;
+use esp_idf_sys::{c_types::*, esp, *};
+use log::{info, log, Level};
 
 use crate::private::cstr::*;
 
@@ -252,7 +246,7 @@ impl Into<httpd_err_code_t> for HttpdError {
     }
 }
 
-pub struct ErrorHandler {
+struct ErrorHandler {
     error: HttpdError,
     // handler: Box<dyn Fn(Request, HttpdError) -> Result<Response>>,
     handler: unsafe extern "C" fn(req: *mut httpd_req_t, error: httpd_err_code_t) -> esp_err_t,

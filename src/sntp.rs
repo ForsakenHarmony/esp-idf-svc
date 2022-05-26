@@ -1,4 +1,5 @@
-use core::cmp::min;
+extern crate alloc;
+use alloc::string::String;
 use core::time::Duration;
 
 use ::log::*;
@@ -116,7 +117,7 @@ impl<'a> Default for SntpConf<'a> {
 }
 
 static TAKEN: mutex::Mutex<bool> = mutex::Mutex::new(false);
-static mut WAITER: Option<Waiter> = None;
+static WAITER: mutex::Mutex<Option<Arc<Waitable<bool>>>> = mutex::Mutex::new(None);
 
 pub struct EspSntp {
     // Needs to be kept around because the C bindings only have a pointer.
@@ -163,8 +164,8 @@ impl EspSntp {
             sntp_init();
         };
 
-        let waiter = WAITER.insert(Waiter::new());
-        waiter.start();
+        let waiter = Arc::new(Waitable::new(false));
+        *WAITER.lock() = Some(waiter);
 
         info!("Initialization complete");
 
@@ -179,7 +180,11 @@ impl EspSntp {
     pub fn wait_for_sync(&self, dur: Duration) -> bool {
         info!("Waiting for system time to be set");
 
-        unsafe { WAITER.as_ref().unwrap().wait_timeout(dur) }
+        let waiter = { (*WAITER.lock()).clone().expect("populated in init") };
+
+        waiter
+            .wait_timeout_while_and_get(dur, |synced| !synced, |_| ())
+            .0
     }
 
     unsafe extern "C" fn sync_cb(tv: *mut esp_idf_sys::timeval) {
@@ -189,7 +194,11 @@ impl EspSntp {
             (*tv).tv_usec,
         );
 
-        WAITER.as_ref().unwrap().notify();
+        let waiter = { (*WAITER.lock()).clone().expect("populated in init") };
+        waiter.get_mut(|synced| {
+            *synced = true;
+        });
+        waiter.cvar.notify_all();
     }
 }
 

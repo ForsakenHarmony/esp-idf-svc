@@ -132,7 +132,7 @@ impl RawStorage for EspNvsStorage {
         self.1.erase_key(key)?;
 
         if value.len() < 8 {
-            let uvalue = 0;
+            let mut uvalue = 0;
 
             for v in value.iter().rev() {
                 uvalue <<= 8;
@@ -149,7 +149,7 @@ impl RawStorage for EspNvsStorage {
 
         self.1.commit()?;
 
-        Ok(found)
+        Ok(true)
     }
 }
 

@@ -124,7 +124,7 @@ impl EspNvs {
         }
 
         Ok(NvsHandle {
-            namespace: c_namespace,
+            _namespace: c_namespace,
             handle: raw_handle,
         })
     }
@@ -144,7 +144,7 @@ impl Drop for EspNvs {
 }
 
 pub struct NvsHandle {
-    namespace: CString,
+    _namespace: CString,
     handle: nvs_handle_t,
 }
 
@@ -159,7 +159,7 @@ impl NvsHandle {
         let mut out = 0;
         match unsafe { esp!(nvs_get_i8(self.handle, c_key.as_ptr(), &mut out,)) } {
             Ok(_) => Ok(Some(out)),
-            Err(e) if e.code() as u32 == ESP_ERR_NVS_NOT_FOUND => Ok(None),
+            Err(e) if e.code() == ESP_ERR_NVS_NOT_FOUND => Ok(None),
             Err(e) => Err(e),
         }
     }
@@ -174,7 +174,7 @@ impl NvsHandle {
         let mut out = 0;
         match unsafe { esp!(nvs_get_u8(self.handle, c_key.as_ptr(), &mut out,)) } {
             Ok(_) => Ok(Some(out)),
-            Err(e) if e.code() as u32 == ESP_ERR_NVS_NOT_FOUND => Ok(None),
+            Err(e) if e.code() == ESP_ERR_NVS_NOT_FOUND => Ok(None),
             Err(e) => Err(e),
         }
     }
@@ -189,7 +189,7 @@ impl NvsHandle {
         let mut out = 0;
         match unsafe { esp!(nvs_get_i16(self.handle, c_key.as_ptr(), &mut out,)) } {
             Ok(_) => Ok(Some(out)),
-            Err(e) if e.code() as u32 == ESP_ERR_NVS_NOT_FOUND => Ok(None),
+            Err(e) if e.code() == ESP_ERR_NVS_NOT_FOUND => Ok(None),
             Err(e) => Err(e),
         }
     }
@@ -204,7 +204,7 @@ impl NvsHandle {
         let mut out = 0;
         match unsafe { esp!(nvs_get_u16(self.handle, c_key.as_ptr(), &mut out,)) } {
             Ok(_) => Ok(Some(out)),
-            Err(e) if e.code() as u32 == ESP_ERR_NVS_NOT_FOUND => Ok(None),
+            Err(e) if e.code() == ESP_ERR_NVS_NOT_FOUND => Ok(None),
             Err(e) => Err(e),
         }
     }
@@ -219,7 +219,7 @@ impl NvsHandle {
         let mut out = 0;
         match unsafe { esp!(nvs_get_i32(self.handle, c_key.as_ptr(), &mut out,)) } {
             Ok(_) => Ok(Some(out)),
-            Err(e) if e.code() as u32 == ESP_ERR_NVS_NOT_FOUND => Ok(None),
+            Err(e) if e.code() == ESP_ERR_NVS_NOT_FOUND => Ok(None),
             Err(e) => Err(e),
         }
     }
@@ -234,7 +234,7 @@ impl NvsHandle {
         let mut out = 0;
         match unsafe { esp!(nvs_get_u32(self.handle, c_key.as_ptr(), &mut out,)) } {
             Ok(_) => Ok(Some(out)),
-            Err(e) if e.code() as u32 == ESP_ERR_NVS_NOT_FOUND => Ok(None),
+            Err(e) if e.code() == ESP_ERR_NVS_NOT_FOUND => Ok(None),
             Err(e) => Err(e),
         }
     }
@@ -249,7 +249,7 @@ impl NvsHandle {
         let mut out = 0;
         match unsafe { esp!(nvs_get_i64(self.handle, c_key.as_ptr(), &mut out,)) } {
             Ok(_) => Ok(Some(out)),
-            Err(e) if e.code() as u32 == ESP_ERR_NVS_NOT_FOUND => Ok(None),
+            Err(e) if e.code() == ESP_ERR_NVS_NOT_FOUND => Ok(None),
             Err(e) => Err(e),
         }
     }
@@ -264,7 +264,7 @@ impl NvsHandle {
         let mut out = 0;
         match unsafe { esp!(nvs_get_u64(self.handle, c_key.as_ptr(), &mut out,)) } {
             Ok(_) => Ok(Some(out)),
-            Err(e) if e.code() as u32 == ESP_ERR_NVS_NOT_FOUND => Ok(None),
+            Err(e) if e.code() == ESP_ERR_NVS_NOT_FOUND => Ok(None),
             Err(e) => Err(e),
         }
     }
@@ -288,7 +288,7 @@ impl NvsHandle {
                 &mut required_size,
             ))
         } {
-            Err(e) if e.code() as u32 == ESP_ERR_NVS_NOT_FOUND => return Ok(None),
+            Err(e) if e.code() == ESP_ERR_NVS_NOT_FOUND => return Ok(None),
             Err(e) => return Err(e),
             _ => {}
         }
@@ -339,7 +339,7 @@ impl NvsHandle {
                 &mut required_size,
             ))
         } {
-            Err(e) if e.code() as u32 == ESP_ERR_NVS_NOT_FOUND => return Ok(None),
+            Err(e) if e.code() == ESP_ERR_NVS_NOT_FOUND => return Ok(None),
             Err(e) => return Err(e),
             _ => {}
         }
@@ -364,7 +364,7 @@ impl NvsHandle {
         let c_key = CString::new(key.as_ref()).unwrap();
         match unsafe { esp!(nvs_erase_key(self.handle, c_key.as_ptr())) } {
             Ok(_) => Ok(true),
-            Err(e) if e.code() as u32 == ESP_ERR_NVS_NOT_FOUND => Ok(false),
+            Err(e) if e.code() == ESP_ERR_NVS_NOT_FOUND => Ok(false),
             Err(e) => Err(e),
         }
     }

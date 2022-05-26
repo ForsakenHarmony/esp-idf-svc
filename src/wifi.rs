@@ -99,7 +99,7 @@ impl From<&ClientConfiguration> for Newtype<wifi_sta_config_t> {
 
 impl From<Newtype<wifi_sta_config_t>> for ClientConfiguration {
     fn from(conf: Newtype<wifi_sta_config_t>) -> Self {
-        Self {
+        ClientConfiguration {
             ssid: from_cstr(&conf.0.ssid).into(),
             bssid: if conf.0.bssid_set {
                 Some(conf.0.bssid)
@@ -141,12 +141,13 @@ impl From<&AccessPointConfiguration> for Newtype<wifi_ap_config_t> {
 
 impl From<Newtype<wifi_ap_config_t>> for AccessPointConfiguration {
     fn from(conf: Newtype<wifi_ap_config_t>) -> Self {
-        Self {
+        AccessPointConfiguration {
             ssid: if conf.0.ssid_len == 0 {
                 from_cstr(&conf.0.ssid).into()
             } else {
                 unsafe {
-                    core::str::from_utf8_unchecked(&conf.0.ssid[0..conf.0.ssid_len as usize]).into()
+                    core::str::from_utf8_unchecked(&conf.0.ssid[0..conf.0.ssid_len as usize])
+                        .to_owned()
                 }
             },
             ssid_hidden: conf.0.ssid_hidden != 0,
@@ -592,7 +593,10 @@ impl EspWifi {
             let mut shared = self.waitable.state.lock();
 
             shared.operating = false;
+        }
 
+        let status = self.get_status();
+        if status.0 != ClientStatus::Stopped {
             esp!(unsafe { esp_wifi_disconnect() }).or_else(|err| {
                 if err.code() == esp_idf_sys::ESP_ERR_WIFI_NOT_STARTED as esp_err_t {
                     Ok(())
@@ -601,7 +605,9 @@ impl EspWifi {
                 }
             })?;
             info!("Disconnect requested");
+        }
 
+        if status.1 != ApStatus::Stopped {
             esp!(unsafe { esp_wifi_stop() })?;
             info!("Stop requested");
         }

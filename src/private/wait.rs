@@ -9,6 +9,8 @@ use esp_idf_sys::*;
 #[cfg(not(feature = "std"))]
 use super::time::micros_since_boot;
 
+use esp_idf_hal::mutex;
+
 pub struct Waiter {
     #[cfg(feature = "std")]
     cvar: Condvar,

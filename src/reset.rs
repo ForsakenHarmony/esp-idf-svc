@@ -2,8 +2,8 @@ use alloc::sync::Arc;
 use core::time::Duration;
 
 use log::*;
-use mutex_trait::Mutex;
 
+use esp_idf_hal::mutex;
 use esp_idf_sys::*;
 
 use crate::nvs::EspDefaultNvs;
@@ -14,32 +14,33 @@ const FLAG_SET: u16 = 0x1234;
 const FLAG_CLEAR: u16 = 0x4321;
 const FLAG_KEY: &str = "drd_flag";
 
-static mut DOUBLE_RESET: EspMutex<Option<bool>> = EspMutex::new(None);
+static DOUBLE_RESET: mutex::Mutex<Option<bool>> = mutex::Mutex::new(None);
 
 pub fn detect_double_reset(nvs: Arc<EspDefaultNvs>, timeout: Duration) -> Result<bool, IdfError> {
-    unsafe {
-        DOUBLE_RESET.lock(move |v| {
-            if let Some(double_reset) = v {
-                Ok(*double_reset)
-            } else {
-                let mut drd = DoubleResetDetector::new(nvs.clone(), timeout);
+    let mut double_reset_opt = DOUBLE_RESET.lock();
+    if let Some(double_reset) = *double_reset_opt {
+        Ok(double_reset)
+    } else {
+        let mut drd = DoubleResetDetector::new(nvs.clone(), timeout);
 
-                let double_reset = drd.detect()?;
-                if double_reset {
-                    info!("detected double reset");
-                    drd.stop()?;
-                } else {
-                    task::spawn("drd", move || {
-                        task::sleep(timeout - Duration::from_micros(micros_since_boot()));
-                        drd.stop()?;
-                        Ok(())
-                    })?;
-                }
+        let double_reset = drd.detect()?;
+        if double_reset {
+            info!("detected double reset");
+            drd.stop()?;
+        } else {
+            std::thread::spawn(move || {
+                task::sleep(timeout - Duration::from_micros(micros_since_boot()));
+                drd.stop().expect("");
+            });
+            // task::spawn("drd", move || {
+            //     task::sleep(timeout - Duration::from_micros(micros_since_boot()));
+            //     drd.stop()?;
+            //     Ok(())
+            // })?;
+        }
 
-                *v = Some(double_reset);
-                Ok(double_reset)
-            }
-        })
+        *double_reset_opt = Some(double_reset);
+        Ok(double_reset)
     }
 }
 
